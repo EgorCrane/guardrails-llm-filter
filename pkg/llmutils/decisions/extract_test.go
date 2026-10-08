@@ -78,6 +78,21 @@ func TestExtractRequestContent(t *testing.T) {
 		}, paths(fields))
 	})
 
+	t.Run("state as a plain string is extracted", func(t *testing.T) {
+		// The TypeSafe API accepts state as a string, an object or an array.
+		body := []byte(`{"model":"jev-latest","state":"mail a@b.ru","questions":{"q":{"instructions":"ok?"}}}`)
+		fields, err := ExtractRequestContent(body)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"state", "questions.q.instructions"}, paths(fields))
+	})
+
+	t.Run("state as an array is extracted", func(t *testing.T) {
+		body := []byte(`{"state":["one","two"],"questions":{}}`)
+		fields, err := ExtractRequestContent(body)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"state.0", "state.1"}, paths(fields))
+	})
+
 	t.Run("fields outside state and instructions are not scanned", func(t *testing.T) {
 		body := []byte(`{"model":"typesafe/jev","user":"someone",` +
 			`"questions":{"q1":{"type":"noul","instructions":"i"}}}`)
